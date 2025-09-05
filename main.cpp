@@ -1,7 +1,8 @@
 #include <iostream>
+#include <algorithm>
 #include <array>
 
-constexpr int CANVAS_HEIGHT = 30;
+constexpr int CANVAS_HEIGHT = 40;
 constexpr int CANVAS_WIDTH = 40;
 
 constexpr int CAMERA_Z_DEPTH = 5;
@@ -42,10 +43,55 @@ struct Cube {
     }};
 };
 
+Cube cube;
+
 Point3d project3d(Point3d point) {
     int screenX = point.x * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_WIDTH / 2;
     int screenY = point.y * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_HEIGHT / 2;
     return {screenX, screenY, point.z*CAMERA_ZOOM};
+}
+
+double line(double m, double c, Point3d p) {
+    return m*(p.x) - p.y +c ;
+}
+
+void drawLineAxis(int x0, int y0, int x1, int y1, double m, double c, bool swapXY) {
+    int stepX = (x1 > x0) ? 1 : -1;
+    int stepY = (y1 > y0) ? 1 : -1;
+
+    if (y1 == y0) {
+        stepY = 0;
+    }
+
+    if (y0 == 28 && y1 == 32) {
+        std::cout << stepX << ' ' << stepY << '\n';
+    }
+
+    int x = x0, y = y0;
+
+    while (x != x1) {
+        if (swapXY) {
+            if (y >= 0 && y < CANVAS_WIDTH && x >= 0 && x < CANVAS_HEIGHT) {
+                grid[x][y] = '#';
+            }
+        } else {
+            if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+                if (y0 == 32 && y1 == 28) {
+                    std::cout << y << " " << x << '\n';
+                }
+                grid[y][x] = '#';
+            }
+        }
+
+        x += stepX;
+        double midpointTest = line(m, c, {x, y, 0}) + 0.5 * stepY;
+        if (y0 == 32 && y1 == 28) {
+            std::cout << midpointTest << m << '\n';
+        }
+        if (midpointTest*stepY > 0) {
+            y += stepY;
+        }
+    }
 }
 
 void showGrid() {
@@ -57,6 +103,40 @@ void showGrid() {
     }
 }
 
+void drawLine(Edge e) {
+    Point3d v1, v2;
+    v1 = project3d(cube.vertices[e.start]);
+    v2 = project3d(cube.vertices[e.end]);
+
+    int deltaX = abs(v1.x - v2.x);
+    int deltaY = abs(v1.y - v2.y);
+
+    if (e.start == 2 && e.end == 6) {
+        std::cout << v1.x << " " << v1.y << " " << v2.x << " " << v2.y << "\n";
+    }
+
+    if (deltaX == 0) {
+        int startY = std::min(v1.y, v2.y);
+        int endY = std::max(v1.y, v2.y);
+        for (int y = startY; y <= endY; y++) {
+            if (v1.x >= 0 && v1.x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+                grid[y][v1.x] = '#';
+            }
+        }
+        return;
+    }
+
+    double m = static_cast<double>(v1.y - v2.y) / (v1.x - v2.x);
+    double c = v1.y - m*v1.x;
+
+    if (deltaX >= deltaY) {
+
+        drawLineAxis(v1.x, v1.y, v2.x, v2.y, m, c, false);
+    } else {
+        drawLineAxis(v1.y, v1.x, v2.y, v2.x, 1/m, v1.x - (1/m)*v1.y, true);
+    }
+}
+
 int main() {
     for (auto &row : grid) {
         for (char &cell : row) {
@@ -64,9 +144,9 @@ int main() {
         }
     }
 
-    for (auto point : cube.vertices) {
-        Point3d pointProjected = project3d(point);
-        grid[pointProjected.y][pointProjected.x] = '#';
+    for (auto edge : cube.edges) {
+        drawLine(edge);
     }
+    grid[31][9]= '#';
     showGrid();
 }
