@@ -76,18 +76,12 @@ void drawLineAxis(int x0, int y0, int x1, int y1, double m, double c, bool swapX
             }
         } else {
             if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-                if (y0 == 32 && y1 == 28) {
-                    std::cout << y << " " << x << '\n';
-                }
                 grid[y][x] = '#';
             }
         }
 
         x += stepX;
         double midpointTest = line(m, c, {x, y, 0}) + 0.5 * stepY;
-        if (y0 == 32 && y1 == 28) {
-            std::cout << midpointTest << m << '\n';
-        }
         if (midpointTest*stepY > 0) {
             y += stepY;
         }
@@ -110,10 +104,6 @@ void drawLine(Edge e) {
 
     int deltaX = abs(v1.x - v2.x);
     int deltaY = abs(v1.y - v2.y);
-
-    if (e.start == 2 && e.end == 6) {
-        std::cout << v1.x << " " << v1.y << " " << v2.x << " " << v2.y << "\n";
-    }
 
     if (deltaX == 0) {
         int startY = std::min(v1.y, v2.y);
@@ -147,6 +137,5 @@ int main() {
     for (auto edge : cube.edges) {
         drawLine(edge);
     }
-    grid[31][9]= '#';
     showGrid();
 }
