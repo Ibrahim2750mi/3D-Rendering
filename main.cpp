@@ -1,18 +1,20 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <unistd.h>
+#include <cmath>
 
-constexpr int CANVAS_HEIGHT = 40;
-constexpr int CANVAS_WIDTH = 40;
+constexpr int CANVAS_HEIGHT = 60;
+constexpr int CANVAS_WIDTH = 60;
 
 constexpr int CAMERA_Z_DEPTH = 5;
-constexpr int CAMERA_ZOOM = 10;
+constexpr int CAMERA_ZOOM = 8;
 
 std::array<std::array<char, CANVAS_WIDTH>, CANVAS_HEIGHT> grid;
 
 
 struct Point3d {
-    int x,y,z;
+    double x,y,z;
 };
 
 struct Edge {
@@ -41,49 +43,48 @@ struct Cube {
         // Connecting back to front
         {0, 4}, {1, 5}, {2, 6}, {3, 7}
     }};
+
+    double angleY = 0.0;
+    double angleX = 0.0;
+    double angleZ = 0.0;
 };
 
 Cube cube;
 
 Point3d project3d(Point3d point) {
-    int screenX = point.x * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_WIDTH / 2;
-    int screenY = point.y * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_HEIGHT / 2;
+    double screenX = point.x * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_WIDTH / 2;
+    double screenY = point.y * CAMERA_Z_DEPTH * CAMERA_ZOOM / (point.z + CAMERA_Z_DEPTH) + CANVAS_HEIGHT / 2;
     return {screenX, screenY, point.z*CAMERA_ZOOM};
 }
 
-double line(double m, double c, Point3d p) {
-    return m*(p.x) - p.y +c ;
-}
 
-void drawLineAxis(int x0, int y0, int x1, int y1, double m, double c, bool swapXY) {
-    int stepX = (x1 > x0) ? 1 : -1;
-    int stepY = (y1 > y0) ? 1 : -1;
+void drawLine(Edge e) {
+    Point3d v1 = project3d(cube.vertices[e.start]);
+    Point3d v2 = project3d(cube.vertices[e.end]);
 
-    if (y1 == y0) {
-        stepY = 0;
-    }
+    int deltaX = v2.x - v1.x;  // Note: v2 - v1, not v1 - v2
+    int deltaY = v2.y - v1.y;
 
-    if (y0 == 28 && y1 == 32) {
-        std::cout << stepX << ' ' << stepY << '\n';
-    }
+    // Find the number of steps (the larger of the two deltas)
+    int steps = std::max(abs(deltaX), abs(deltaY));
 
-    int x = x0, y = y0;
-
-    while (x != x1) {
-        if (swapXY) {
-            if (y >= 0 && y < CANVAS_WIDTH && x >= 0 && x < CANVAS_HEIGHT) {
-                grid[x][y] = '#';
-            }
-        } else {
-            if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-                grid[y][x] = '#';
-            }
+    // If both points are the same, just draw one point
+    if (steps == 0) {
+        if (v1.x >= 0 && v1.x < CANVAS_WIDTH && v1.y >= 0 && v1.y < CANVAS_HEIGHT) {
+            grid[static_cast<int>(v1.y)][static_cast<int>(v1.x)] = '#';
         }
+        return;
+    }
 
-        x += stepX;
-        double midpointTest = line(m, c, {x, y, 0}) + 0.5 * stepY;
-        if (midpointTest*stepY > 0) {
-            y += stepY;
+    // Step along the line
+    for (int i = 0; i <= steps; i++) {
+        // Interpolate between v1 and v2
+        int x = v1.x + (i * deltaX) / steps;
+        int y = v1.y + (i * deltaY) / steps;
+
+        // Bounds checking
+        if (x >= 0 && x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
+            grid[y][x] = '#';
         }
     }
 }
@@ -97,45 +98,65 @@ void showGrid() {
     }
 }
 
-void drawLine(Edge e) {
-    Point3d v1, v2;
-    v1 = project3d(cube.vertices[e.start]);
-    v2 = project3d(cube.vertices[e.end]);
-
-    int deltaX = abs(v1.x - v2.x);
-    int deltaY = abs(v1.y - v2.y);
-
-    if (deltaX == 0) {
-        int startY = std::min(v1.y, v2.y);
-        int endY = std::max(v1.y, v2.y);
-        for (int y = startY; y <= endY; y++) {
-            if (v1.x >= 0 && v1.x < CANVAS_WIDTH && y >= 0 && y < CANVAS_HEIGHT) {
-                grid[y][v1.x] = '#';
-            }
-        }
-        return;
-    }
-
-    double m = static_cast<double>(v1.y - v2.y) / (v1.x - v2.x);
-    double c = v1.y - m*v1.x;
-
-    if (deltaX >= deltaY) {
-
-        drawLineAxis(v1.x, v1.y, v2.x, v2.y, m, c, false);
-    } else {
-        drawLineAxis(v1.y, v1.x, v2.y, v2.x, 1/m, v1.x - (1/m)*v1.y, true);
-    }
-}
-
-int main() {
+void clearScreen() {
+    system("clear");
     for (auto &row : grid) {
         for (char &cell : row) {
             cell = '.';
         }
     }
+}
 
-    for (auto edge : cube.edges) {
-        drawLine(edge);
+Point3d rotateX(Point3d p, double angle) {
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+    return {p.x,
+            (p.y * cos_a - p.z * sin_a),
+            (p.y * sin_a + p.z * cos_a)};
+}
+
+Point3d rotateY(Point3d p, double angle) {
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+    return {(p.x * cos_a + p.z * sin_a),
+            p.y,
+            (-p.x * sin_a + p.z * cos_a)};
+}
+
+Point3d rotateZ(Point3d p, double angle) {
+    double cos_a = cos(angle);
+    double sin_a = sin(angle);
+    return {(p.x * cos_a - p.y * sin_a),
+            (p.x * sin_a + p.y * cos_a),
+            p.z};
+}
+
+
+[[noreturn]] int main(){
+
+    std::array<Point3d, 8> baseVertices = cube.vertices;
+    while (true) {
+        clearScreen();
+        cube.angleY += 0.01;
+
+        // recompute rotated vertices
+        for (int i = 0; i < 8; i++) {
+            cube.vertices[i] = rotateY(baseVertices[i], cube.angleY);
+        }
+        //
+        for (auto edge : cube.edges) {
+            drawLine(edge);
+        }
+        // cube.angleY += 0.01;
+        // for (auto vertex: baseVertices) {
+        //     // vertex = project3d(vertex);
+        //     vertex = rotateY(vertex, cube.angleY);
+        //     std::cout << vertex.x << ", " << vertex.y << ", " << vertex.z << "\n";
+        //     vertex = project3d(vertex);
+        //     grid[static_cast<int>(vertex.y)][static_cast<int>(vertex.x)] = '#';
+        // }
+
+        showGrid();
+        usleep(100000);
     }
-    showGrid();
 }
