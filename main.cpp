@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <vector>
 #include <unistd.h>
 #include <cmath>
 
@@ -19,6 +20,52 @@ struct Point3d {
 
 struct Edge {
     int start,end;
+};
+
+
+
+struct Torus {
+    double R = 2.0;  // Major radius (donut thickness)
+    double r = 1.0;  // Minor radius (tube thickness)
+
+    std::vector<Point3d> vertices;
+    std::vector<Edge> edges;
+
+    double angleX = 0.0, angleY = 0.0, angleZ = 0.0;
+
+    void generateVertices() {
+        vertices.clear();
+        edges.clear();
+
+        int phi_steps = 12;    // Around the tube
+        int theta_steps = 18;  // Around the major circle
+
+        // Generate vertices using parametric equations
+        for (int i = 0; i < phi_steps; i++) {
+            for (int j = 0; j < theta_steps; j++) {
+                double phi = 2.0 * M_PI * i / phi_steps;     // 0 to 2π
+                double theta = 2.0 * M_PI * j / theta_steps; // 0 to 2π
+
+                double x = (R + r * cos(phi)) * cos(theta);
+                double y = (R + r * cos(phi)) * sin(theta);
+                double z = r * sin(phi);
+
+                vertices.push_back({x, y, z});
+            }
+        }
+
+        // Generate edges to connect nearby vertices
+        for (int i = 0; i < phi_steps; i++) {
+            for (int j = 0; j < theta_steps; j++) {
+                int current = i * theta_steps + j;
+                int next_phi = ((i + 1) % phi_steps) * theta_steps + j;
+                int next_theta = i * theta_steps + ((j + 1) % theta_steps);
+
+                edges.push_back({current, next_phi});    // Connect along phi
+                edges.push_back({current, next_theta});  // Connect along theta
+            }
+        }
+    }
 };
 
 struct Cube {
@@ -102,7 +149,7 @@ void clearScreen() {
     system("clear");
     for (auto &row : grid) {
         for (char &cell : row) {
-            cell = '.';
+            cell = ' ';
         }
     }
 }
@@ -134,24 +181,50 @@ Point3d rotateZ(Point3d p, double angle) {
 
 [[noreturn]] int main(){
 
-    std::array<Point3d, 8> baseVertices = cube.vertices;
+    // std::array<Point3d, 8> baseVertices = cube.vertices;
+    Torus torus;
+
+    // In main(), before the loop:
+    torus.generateVertices();
+    std::vector<Point3d> baseVertices = torus.vertices;
     while (true) {
         clearScreen();
-        cube.angleY += 0.01;
+        // cube.angleY += 0.05;
+        // cube.angleX += 0.05;
+        // cube.angleZ += 0.05;
+
+        torus.angleX += 0.1;
+        torus.angleY += 0.1;
+        torus.angleZ += 0.1;
+        // Rotate vertices
+        for (size_t i = 0; i < torus.vertices.size(); i++) {
+            torus.vertices[i] = rotateZ(rotateY(rotateX(baseVertices[i], torus.angleX), torus.angleY), torus.angleZ);
+        }
+
+        // Draw edges
+        // for (auto edge : torus.edges) {
+        //     drawLine(edge);  // Use your existing drawLine function
+        // }
+
+        for (auto vertex: baseVertices) {
+            vertex = rotateZ(rotateY(rotateX(vertex, torus.angleX), torus.angleY), torus.angleZ);
+            vertex = project3d(vertex);
+            grid[static_cast<int>(vertex.y)][static_cast<int>(vertex.x)] = '#';
+        }
 
         // recompute rotated vertices
-        for (int i = 0; i < 8; i++) {
-            cube.vertices[i] = rotateY(baseVertices[i], cube.angleY);
-        }
+        // for (int i = 0; i < 8; i++) {
+            // cube.vertices[i] = rotateZ(rotateX(rotateY(baseVertices[i], cube.angleY), cube.angleX), cube.angleZ);
+        // }
         //
-        for (auto edge : cube.edges) {
-            drawLine(edge);
-        }
+        // for (auto edge : cube.edges) {
+        //     drawLine(edge);
+        // }
         // cube.angleY += 0.01;
         // for (auto vertex: baseVertices) {
         //     // vertex = project3d(vertex);
-        //     vertex = rotateY(vertex, cube.angleY);
-        //     std::cout << vertex.x << ", " << vertex.y << ", " << vertex.z << "\n";
+        //     vertex = rotateZ(rotateX(rotateY(vertex, cube.angleY), cube.angleX), cube.angleZ);
+        //     // std::cout << vertex.x << ", " << vertex.y << ", " << vertex.z << "\n";
         //     vertex = project3d(vertex);
         //     grid[static_cast<int>(vertex.y)][static_cast<int>(vertex.x)] = '#';
         // }
