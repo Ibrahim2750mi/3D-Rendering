@@ -3,4 +3,4 @@ project(DAC_101_CWS)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(DAC_101_CWS main.cpp)
+add_executable(DAC_101_CWS src/main.cpp)
