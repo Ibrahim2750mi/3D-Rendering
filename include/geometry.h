@@ -8,6 +8,13 @@ struct Point3d {
     Point3d(double x, double y, double z) : x(x), y(y), z(z) {}
 };
 
+struct TorusVertex {
+    Point3d position;
+    double phi, theta;
+
+    TorusVertex(Point3d position, double phi, double theta) : position(position), phi(phi), theta(theta) {}
+};
+
 Point3d rotateX(Point3d p, double angle);
 Point3d rotateY(Point3d p, double angle);
 Point3d rotateZ(Point3d p, double angle);

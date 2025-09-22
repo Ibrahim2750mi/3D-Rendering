@@ -1,7 +1,11 @@
+#include <cmath>
+#include <math.h>
+#include <string>
 #include <unistd.h>
 
 #include "../include/constants.h"
 #include "../include/geometry.h"
+#include "../include/light.h"
 #include "../include/renderer.h"
 #include "../include/shapes.h"
 
@@ -22,23 +26,15 @@
             auto vertex = baseVertices[i];
             vertex = rotateX(rotateY(rotateZ(vertex, torus.angleZ), torus.angleY), torus.angleX);
             torus.vertices[i] = vertex;
+            auto temp = torus.torusVertices[i];
+            torus.torusVertices[i] = {vertex, temp.phi, temp.theta};
         }
 
-        // Draw all vertex
+        // Draw all vertices
 
-        for (auto p: torus.vertices) {
-            renderer.plotPoint(p, '#');
+        for (auto p: torus.torusVertices) {
+            renderer.plotPoint(p.position, lambertShading(p));
         }
-
-        // Draw all edges
-        const auto& vertices = torus.vertices;
-        const auto& edges = torus.edges;
-
-        // for (const auto& edge : edges) {
-        //     if (edge.start < vertices.size() && edge.end < vertices.size()) {
-        //         renderer.drawLine(vertices[edge.start], vertices[edge.end]);
-        //     }
-        // }
 
         renderer.showGrid();
 

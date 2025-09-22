@@ -26,7 +26,6 @@ public:
 
     // Pure virtual functions - must be implemented by derived classes
     virtual void generateVertices() = 0;
-    virtual void generateEdges() = 0;
 
     // Getters
     const std::vector<Point3d>& getVertices() const { return baseVertices; }
@@ -38,7 +37,7 @@ public:
     Cube();
 
     void generateVertices() override;
-    void generateEdges() override;
+    void generateEdges();
 };
 
 // Torus implementation
@@ -53,7 +52,8 @@ public:
     Torus(double R = TORUS_MAJOR_RADIUS, double r = TORUS_MINOR_RADIUS,
           int phi = TORUS_PHI_STEPS, int theta = TORUS_THETA_STEPS);
 
+    std::vector<TorusVertex> torusVertices;
+
     void generateVertices() override;
-    void generateEdges() override;
 
 };

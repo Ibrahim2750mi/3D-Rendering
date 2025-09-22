@@ -45,7 +45,6 @@ void Cube::generateEdges() {
 Torus::Torus(double R, double r, int phi, int theta)
     : majorRadius(R), minorRadius(r), phiSteps(phi), thetaSteps(theta) {
     Torus::generateVertices();
-    Torus::generateEdges();
     baseVertices = vertices;  // Store original positions
 }
 
@@ -53,10 +52,11 @@ Torus::Torus(double R, double r, int phi, int theta)
 
 void Torus::generateVertices() {
     vertices.clear();
+    torusVertices.clear();
 
     // Generate vertices using parametric torus equations
-    for (int i = 0; i < phiSteps; i++) {
-        for (int j = 0; j < thetaSteps; j++) {
+    for (double i = 0; i < phiSteps; i+=0.5) {
+        for (double j = 0; j < thetaSteps; j+=0.5) {
             double phi = 2.0 * M_PI * i / phiSteps;     // 0 to 2π (around tube)
             double theta = 2.0 * M_PI * j / thetaSteps; // 0 to 2π (around major circle)
 
@@ -66,27 +66,7 @@ void Torus::generateVertices() {
             double z = minorRadius * sin(phi);
 
             vertices.push_back({x, y, z});
-        }
-    }
-}
-
-void Torus::generateEdges() {
-    edges.clear();
-
-    // Connect vertices to form wireframe
-    for (int i = 0; i < phiSteps; i++) {
-        for (int j = 0; j < thetaSteps; j++) {
-            int current = i * thetaSteps + j;
-            int next_phi = ((i + 1) % phiSteps) * thetaSteps + j;
-            int next_theta = i * thetaSteps + ((j + 1) % thetaSteps);
-
-            // Add bounds checking to prevent segfaults
-            if (current < vertices.size() && next_phi < vertices.size()) {
-                edges.push_back({current, next_phi});    // Connect along phi direction
-            }
-            if (current < vertices.size() && next_theta < vertices.size()) {
-                edges.push_back({current, next_theta});  // Connect along theta direction
-            }
+            torusVertices.push_back(TorusVertex({x, y, z}, phi, theta));
         }
     }
 }
