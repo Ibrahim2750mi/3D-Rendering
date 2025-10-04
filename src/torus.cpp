@@ -1,6 +1,5 @@
-#include <cmath>
-#include <math.h>
-#include <string>
+// g++ -I include src/modules/*.cpp src/torus.cpp -o build/torus
+
 #include <unistd.h>
 
 #include "../include/constants.h"
@@ -19,12 +18,13 @@
 
         // Update rotation angles
         torus.angleY += ROTATION_SPEED;
-        torus.angleX += ROTATION_SPEED * 0.4;  // Slower X rotation
+        torus.angleX += ROTATION_SPEED * 0.4;
+        torus.angleZ += ROTATION_SPEED;
         auto baseVertices = torus.getVertices();
-        // Apply rotations to get new vertex positions
+        // Applying rotations to get new vertex positions
         for (int i = 0; i < baseVertices.size(); i++) {
             auto vertex = baseVertices[i];
-            vertex = rotateX(rotateY(rotateZ(vertex, torus.angleZ), torus.angleY), torus.angleX);
+            vertex = rotateX(rotateY(vertex, torus.angleY), torus.angleX);
             torus.vertices[i] = vertex;
             auto temp = torus.torusVertices[i];
             torus.torusVertices[i] = {vertex, temp.phi, temp.theta};

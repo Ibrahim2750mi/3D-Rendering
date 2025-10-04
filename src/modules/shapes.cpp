@@ -1,5 +1,5 @@
-#include "../include/shapes.h"
-#include "../include/geometry.h"
+#include "../../include/shapes.h"
+#include "../../include/geometry.h"
 #include <cmath>
 
 Cube::Cube() {

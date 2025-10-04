@@ -1,4 +1,4 @@
-#include "../include/renderer.h"
+#include "../../include/renderer.h"
 #include <cstdlib>
 #include <iostream>
 
@@ -48,11 +48,11 @@ bool Renderer::isInBounds(int x, int y) {
 
 void Renderer::drawLine(Point3d v1, Point3d v2) {
 
-    int deltaX = v2.x - v1.x;  // Note: v2 - v1, not v1 - v2
-    int deltaY = v2.y - v1.y;
+    float deltaX = v2.x - v1.x;
+    float deltaY = v2.y - v1.y;
 
     // Find the number of steps (the larger of the two deltas)
-    int steps = std::max(abs(deltaX), abs(deltaY));
+    float steps = std::max(abs(deltaX), abs(deltaY));
 
     // If both points are the same, just draw one point
     if (steps == 0) {

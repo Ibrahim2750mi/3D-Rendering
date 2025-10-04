@@ -11,8 +11,8 @@ constexpr int CAMERA_Z_DEPTH = 5;
 constexpr int CAMERA_ZOOM = 6;
 
 // Animation
-constexpr int FRAME_DELAY_US = 8333;  // ~60 FPS
-constexpr double ROTATION_SPEED = 0.05;
+constexpr int FRAME_DELAY_US = 8333;  // ~120 FPS
+constexpr double ROTATION_SPEED = 0.03;
 
 // Torus parameters
 constexpr double TORUS_MAJOR_RADIUS = 2.0;

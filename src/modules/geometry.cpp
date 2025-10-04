@@ -1,4 +1,4 @@
-#include "../include/geometry.h"
+#include "../../include/geometry.h"
 #include <cmath>
 
 Point3d rotateX(Point3d p, double angle) {
